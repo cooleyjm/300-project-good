@@ -1,0 +1,11 @@
+# VSCODE
+*/.theia
+*/.vscode
+
+# Mac special files
+*/.DS_store
+*/._*
+
+heatmap/*
+widgets/*
+
