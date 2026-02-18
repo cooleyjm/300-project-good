@@ -30,7 +30,7 @@ void setup() {
     Wire.begin();
     Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
-    debug.begin(9600);
+    debug.begin(115200); // Changed to 115200 from 9600 - JC
     while (!debug); //Wait for user to open terminal
     debug.println("MLX90640 IR Array Example");
 
