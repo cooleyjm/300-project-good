@@ -42,12 +42,17 @@
 //#define DEBUG                             // Show calculated and example values for calibration constants
 #define OFFSET 0.0                          // Post-hoc cheap temperature adjustment (shift)
 #define I2C_SPEED 100000                    // Set I2C clock speed (safe speed is 100 kHz, up to 400 kHz possible)
-//#define REFRESH_RATE 0x03                   // 0x00 (0.5 Hz) to 0x07 (64 Hz). Default: 0x03 (4 Hz)
+
+#define REFRESH_RATE 0x03                   // 0x00 (0.5 Hz) to 0x07 (64 Hz). Default: 0x03 (4 Hz)
 // ^Default is 0x03
-#define REFRESH_RATE 0x07
-//#define SAMPLE_DELAY 300                    // delay between reading samples (see refresh rate table)
+//#define REFRESH_RATE 0x07
+//^Fast Mode
+
+#define SAMPLE_DELAY 300                    // delay between reading samples (see refresh rate table)
 // ^For 0x03 Refresh Rate
-#define SAMPLE_DELAY 19
+//#define SAMPLE_DELAY 19
+// ^Fast Mode
+
 #define POR_DELAY SAMPLE_DELAY * 2.0 * 1.2  // delay required after power on reset (see refresh rate table)
 #define CAL_INT -45.4209807273067           // Intercept of T_meas vs. T_o calibration curve (post-hoc calibration). My value: -45.4209807273067
 #define CAL_SLOPE 2.64896693658985          // Slope of T_meas vs. T_o calibration curve (post-hoc calibration). My value: 2.64896693658985
@@ -136,6 +141,7 @@ void loop() {
     for (int r = 0; r < 12; r++) {    // rows
       for (int c = 0; c < 16; c++) {  // columns
         // Two options here: final temperatures, or ASCII heat map:
+        /*
         float lim1 = 23.0;  // low limit for heat map
         float lim2 = 25.0;  // middle limit for heat map
         float lim3 = 27.0;  // high limit for heat map
@@ -145,9 +151,13 @@ void loop() {
         if (myIRcam.T_o[r * 16 + c] > lim1 && myIRcam.T_o[r * 16 + c] <= lim2) Serial.print(".");
         if (myIRcam.T_o[r * 16 + c] <= lim1) Serial.print("C");  // cold
 #else
+        */
+        // Raw Values
         //Serial.print(myIRcam.T_o[r * 16 + c], 1);  // putting the data in a 16x12 grid
 
-        float threshold = 45;
+        
+        // Binary Mask
+        float threshold = 24;
         float temp_val = myIRcam.T_o[r * 16 + c];
         if(temp_val > threshold){
           Serial.print("1");
@@ -155,7 +165,10 @@ void loop() {
         else{
           Serial.print("0");
         }
-#endif
+        
+        
+
+//#endif
         Serial.print(" ");  // print divider for data (needed for both display modes)
       }
       Serial.println();
