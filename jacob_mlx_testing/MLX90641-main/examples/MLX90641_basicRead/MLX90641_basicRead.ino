@@ -38,6 +38,9 @@
 #include <Wire.h>
 #include "MLX90641.h"
 
+#include "cross.h"
+#include <vector>
+
 //#define HEATMAP							// Uncomment for simple ASCII heatmap output to Serial Monitor instead of temperatures
 //#define DEBUG                             // Show calculated and example values for calibration constants
 #define OFFSET 0.0                          // Post-hoc cheap temperature adjustment (shift)
@@ -126,6 +129,16 @@ void setup() {
   #endif*/
 }
 
+volatile int state = 0;
+// Wait = 0
+// Count_Enable = 1;
+// Count = 2;
+
+volatile int row_found = 0;
+volatile int col_found = 0;
+
+volatile double count_people = 0;
+
 void loop() {
   unsigned long pollStart = millis();
   while (millis() - pollStart < 500) {  // 500ms max wait (adjust to > 1000 * 1.2 * (1/refresh_rate in Hz))
@@ -138,6 +151,9 @@ void loop() {
     myIRcam.readTempC();  // read the temperature
 
     Serial.println("\n16x12 Thermal Frame (Celsius calibrated):");
+
+    int grid[12][16]; 
+
     for (int r = 0; r < 12; r++) {    // rows
       for (int c = 0; c < 16; c++) {  // columns
         // Two options here: final temperatures, or ASCII heat map:
@@ -157,13 +173,15 @@ void loop() {
 
         
         // Binary Mask
-        float threshold = 24;
+        float threshold = 18;
         float temp_val = myIRcam.T_o[r * 16 + c];
         if(temp_val > threshold){
           Serial.print("1");
+          grid[r][c] = 1;
         }
         else{
           Serial.print("0");
+          grid[r][c] = 0;
         }
         
         
@@ -183,6 +201,50 @@ void loop() {
     avg /= (float)NUM_PIXELS;
     Serial.print("Average Value: ");
     Serial.println(avg);
+
+    // Code Stuff Begins
+
+    vector<int> find_cross_return; 
+    find_cross_return = find_crosses(grid);
+
+    // Raw Values
+    int row_print = find_cross_return[0];
+    Serial.print("Row: ");
+    Serial.println(row_print,1);
+    int col_print = find_cross_return[1];
+    Serial.print("Col: ");
+    Serial.println(col_print,1);
+    int found_print = find_cross_return[2];
+    Serial.print("Found: ");
+    Serial.println(found_print,1);
+
+    if(found_print == 1){
+      row_found = row_print;
+      col_found = col_print; 
+    }
+
+
+    // If in wait state (0) and found => go to count enable (state 1)
+    if((found_print == 1) && (state == 0)){
+      state = 1; // Count Enable
+    }
+
+    // If in count_enable state (1) and not found
+    if((found_print == 0) && (state == 1)){
+      if(row_found < 6){
+        count_people = (count_people + 1);
+      }
+      else{
+        count_people = (count_people - 1);
+      }
+
+      state = 0; // Wait
+    }
+
+    Serial.print("Count: ");
+    Serial.println(count_people,1);
+
+
   } else {
     Serial.println("Timeout: No new data");
     return;  // Skip this frame
